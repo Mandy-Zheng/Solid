@@ -4,8 +4,8 @@ from gmath import *
 import random
 def scanline_convert(polygons, i, screen, zbuffer ):
     color = [random.randrange(255), random.randrange(255), random.randrange(255)]
-    triX=[int(polygons[i][0]), int(polygons[i+1][0]), int(polygons[i+2][0])]
-    triY=[int(polygons[i][1]), int(polygons[i+1][1]), int(polygons[i+2][1])]
+    triX=[round(polygons[i][0]), round(polygons[i+1][0]), round(polygons[i+2][0])]
+    triY=[round(polygons[i][1]), round(polygons[i+1][1]), round(polygons[i+2][1])]
     index = triY.index(min(triY[0],triY[1],triY[2]))
     yb = triY[index]
     xb = triX[index]
