@@ -4,62 +4,95 @@ from gmath import *
 import random
 def scanline_convert(polygons, i, screen, zbuffer ):
     color = [random.randrange(255), random.randrange(255), random.randrange(255)]
-    triX=[round(polygons[i][0]), round(polygons[i+1][0]), round(polygons[i+2][0])]
-    triY=[round(polygons[i][1]), round(polygons[i+1][1]), round(polygons[i+2][1])]
+    triX=[int(polygons[i][0]), int(polygons[i+1][0]), int(polygons[i+2][0])]
+    triY=[int(polygons[i][1]), int(polygons[i+1][1]), int(polygons[i+2][1])]
+    triZ=[polygons[i][2], polygons[i+1][2], polygons[i+2][2]]
     index = triY.index(min(triY[0],triY[1],triY[2]))
     yb = triY[index]
     xb = triX[index]
-    triY.remove(yb)
-    triX.remove(xb)
-    index = triY.index(max(triY[0],triY[1]))
+    zb = triZ[index]
+    index = triY.index(max(triY[0],triY[1],triY[2]))
     yt = triY[index]
     xt = triX[index]
-    triY.remove(yt)
+    zt = triZ[index]
+    triX.remove(xb)
     triX.remove(xt)
+    triY.remove(yb)
+    triY.remove(yt)
+    triZ.remove(zb)
+    triZ.remove(zt)
     xm = triX[0]
     ym = triY[0]
+    zm = triZ[0]
     if ym==yb or yt==ym:
         dx0 = (xt - xb) / (yt - yb)
-        dx1=0
+        dx1 = 0
+        dz0 = (zt - zb) / (yt - yb)
+        dz1 = 0
         x0 = xb
         x1 = xb
+        z0 = zb
+        z1 = zb
         y = yb
         if ym==yb:
-            x1=xm
+            x1 = xm
+            z1 = zm
             dx1 = (xt - xm) / (yt - ym)
+            dz1 = (zt - zm) / (yt - ym)
         else:
             dx1 = (xm - xb) / (ym - yb)
-        while y<=yt:
-            draw_scanline(int(x0), int(x1), int(y), screen, zbuffer, color)
+            dz1 = (zm - zb) / (ym - yb)
+        while y <= yt:
+            draw_scanline(int(x0), int(x1), int(y), z0, z1, screen, zbuffer, color)
             x0 += dx0
             x1 += dx1
+            z0 += dz0
+            z1 += dz1
             y += 1
     else:
         dx0 = (xt - xb) / (yt - yb)
         dx1 = (xm - xb) / (ym - yb)
         dx1_1 = (xt - xm) / (yt - ym)
+        dz0 = (zt - zb) / (yt - yb)
+        dz1 = (zm - zb) / (ym - yb)
+        dz1_1 = (zt - zm) / (yt - ym)
         x0 = xb
         x1 = xb
+        z0 = zb
+        z1 = zb
         y0 = yb
         y = yb
         while y <= yt:
-            draw_scanline(int(x0), int(x1), int(y), screen, zbuffer, color)
+            draw_scanline(int(x0), int(x1), int(y), z0, z1, screen, zbuffer, color)
             x0 += dx0
             x1 += dx1
+            z0 += dz0
+            z1 += dz1
             y += 1
             if y == ym:
                 dx1 = dx1_1
                 x1 = xm
+                dz1 = dz1_1
+                z1 = zm
 
-def draw_scanline(x0, x1, y, screen, zbuffer, color):
+def draw_scanline(x0, x1, y, z0, z1, screen, zbuffer, color):
     if x0 > x1:
         temp=x0
         x0=x1
         x1=temp
+        temp=z0
+        z0=z1
+        z1=temp
     x = x0
+    z = z0
+    dz = 0
+    if x1-x0 != 0:
+        dz = (z1-z0) / (x1-x0)
     while x <= x1:
-        plot(screen, zbuffer, color, x, y, 0)
+        if zbuffer[y][x] < z:
+            plot(screen, zbuffer, color, x, y, z)
         x+=1
+        z+=dz
 def add_polygon( polygons, x0, y0, z0, x1, y1, z1, x2, y2, z2 ):
     add_point(polygons, x0, y0, z0)
     add_point(polygons, x1, y1, z1)
@@ -73,7 +106,6 @@ def draw_polygons( polygons, screen, zbuffer, color ):
     point = 0
     while point < len(polygons) - 2:
         normal = calculate_normal(polygons, point)[:]
-        #print normal
         if normal[2] > 0:
             '''draw_line( int(polygons[point][0]),
                        int(polygons[point][1]),
@@ -96,7 +128,6 @@ def draw_polygons( polygons, screen, zbuffer, color ):
                        int(polygons[point+2][1]),
                        polygons[point+2][2],
                        screen, zbuffer, color)'''
-
             scanline_convert(polygons, point, screen, zbuffer)
         point+= 3
 
@@ -131,12 +162,10 @@ def add_box( polygons, x, y, z, width, height, depth ):
 
 def add_sphere(polygons, cx, cy, cz, r, step ):
     points = generate_sphere(cx, cy, cz, r, step)
-
     lat_start = 0
     lat_stop = step
     longt_start = 0
     longt_stop = step
-
     step+= 1
     for lat in range(lat_start, lat_stop):
         for longt in range(longt_start, longt_stop):
@@ -315,18 +344,22 @@ def draw_line( x0, y0, z0, x1, y1, z1, screen, zbuffer, color ):
     if x0 > x1:
         xt = x0
         yt = y0
+        zt = z0
         x0 = x1
         y0 = y1
+        z0 = z1
         x1 = xt
         y1 = yt
+        z1 = zt
 
     x = x0
     y = y0
+    z = z0
     A = 2 * (y1 - y0)
     B = -2 * (x1 - x0)
     wide = False
     tall = False
-
+    d_z = 0
     if ( abs(x1-x0) >= abs(y1 - y0) ): #octants 1/8
         wide = True
         loop_start = x
@@ -334,6 +367,8 @@ def draw_line( x0, y0, z0, x1, y1, z1, screen, zbuffer, color ):
         dx_east = dx_northeast = 1
         dy_east = 0
         d_east = A
+        if x1 - x0 != 0:
+            d_z = (z1 - z0) / (x1 - x0)
         if ( A > 0 ): #octant 1
             d = A + B/2
             dy_northeast = 1
@@ -347,6 +382,8 @@ def draw_line( x0, y0, z0, x1, y1, z1, screen, zbuffer, color ):
         tall = True
         dx_east = 0
         dx_northeast = 1
+        if y1 - y0 != 0:
+            d_z = (z1 - z0) / (y1 - y0)
         if ( A > 0 ): #octant 2
             d = A/2 + B
             dy_east = dy_northeast = 1
@@ -363,7 +400,8 @@ def draw_line( x0, y0, z0, x1, y1, z1, screen, zbuffer, color ):
             loop_end = y
 
     while ( loop_start < loop_end ):
-        plot( screen, zbuffer, color, x, y, 0 )
+        if zbuffer[y][x] < z:
+            plot( screen, zbuffer, color, x, y, z )
         if ( (wide and ((A > 0 and d > 0) or (A < 0 and d < 0))) or
              (tall and ((A > 0 and d < 0) or (A < 0 and d > 0 )))):
 
@@ -374,5 +412,7 @@ def draw_line( x0, y0, z0, x1, y1, z1, screen, zbuffer, color ):
             x+= dx_east
             y+= dy_east
             d+= d_east
+        z += d_z
         loop_start+= 1
-    plot( screen, zbuffer, color, x, y, 0 )
+    if zbuffer[y][x] < z:
+        plot( screen, zbuffer, color, x, y, z )
