@@ -7,28 +7,79 @@ def scanline_convert(polygons, i, screen, zbuffer ):
     triX=[int(polygons[i][0]), int(polygons[i+1][0]), int(polygons[i+2][0])]
     triY=[int(polygons[i][1]), int(polygons[i+1][1]), int(polygons[i+2][1])]
     triZ=[polygons[i][2], polygons[i+1][2], polygons[i+2][2]]
-    index = triY.index(min(triY[0],triY[1],triY[2]))
-    yb = triY[index]
-    xb = triX[index]
-    zb = triZ[index]
-    index = triY.index(max(triY[0],triY[1],triY[2]))
-    yt = triY[index]
-    xt = triX[index]
-    zt = triZ[index]
-    triX.remove(xb)
-    triX.remove(xt)
-    triY.remove(yb)
-    triY.remove(yt)
-    triZ.remove(zb)
-    triZ.remove(zt)
-    xm = triX[0]
-    ym = triY[0]
-    zm = triZ[0]
+    xt = 0
+    yt = 0
+    zt = 0
+    xm = 0
+    ym = 0
+    zm = 0
+    xb = 0
+    yb = 0
+    zb = 0
+    if(triY[0] >= triY[1] and triY[0] >= triY[2]):
+        xt = triX[0]
+        yt = triY[0]
+        zt = triZ[0]
+        if(triY[1]>=triY[2]):
+            xm = triX[1]
+            ym = triY[1]
+            zm = triZ[1]
+            xb = triX[2]
+            yb = triY[2]
+            zb = triZ[2]
+        else:
+            xb = triX[1]
+            yb = triY[1]
+            zb = triZ[1]
+            xm = triX[2]
+            ym = triY[2]
+            zm = triZ[2]
+    elif (triY[1] >= triY[2] and triY[1] >= triY[0]):
+        xt = triX[1]
+        yt = triY[1]
+        zt = triZ[1]
+        if(triY[0]>=triY[2]):
+            xm = triX[0]
+            ym = triY[0]
+            zm = triZ[0]
+            xb = triX[2]
+            yb = triY[2]
+            zb = triZ[2]
+        else:
+            xb = triX[0]
+            yb = triY[0]
+            zb = triZ[0]
+            xm = triX[2]
+            ym = triY[2]
+            zm = triZ[2]
+    else:
+        xt = triX[2]
+        yt = triY[2]
+        zt = triZ[2]
+        if(triY[0]>=triY[1]):
+            xm = triX[0]
+            ym = triY[0]
+            zm = triZ[0]
+            xb = triX[1]
+            yb = triY[1]
+            zb = triZ[1]
+        else:
+            xb = triX[0]
+            yb = triY[0]
+            zb = triZ[0]
+            xm = triX[1]
+            ym = triY[1]
+            zm = triZ[1]
+    dx0 = 0
+    dx1 = 0
+    dx1_1 = 0
+    dz0 = 0
+    dz1 = 0
+    dz1_1 = 0
     if ym==yb or yt==ym:
-        dx0 = (xt - xb) / (yt - yb)
-        dx1 = 0
-        dz0 = (zt - zb) / (yt - yb)
-        dz1 = 0
+        if  yt - yb != 0:
+            dx0 = (xt - xb) / (yt - yb)
+            dz0 = (zt - zb) / (yt - yb)
         x0 = xb
         x1 = xb
         z0 = zb
@@ -37,11 +88,13 @@ def scanline_convert(polygons, i, screen, zbuffer ):
         if ym==yb:
             x1 = xm
             z1 = zm
-            dx1 = (xt - xm) / (yt - ym)
-            dz1 = (zt - zm) / (yt - ym)
+            if yt - ym != 0:
+                dx1 = (xt - xm) / (yt - ym)
+                dz1 = (zt - zm) / (yt - ym)
         else:
-            dx1 = (xm - xb) / (ym - yb)
-            dz1 = (zm - zb) / (ym - yb)
+            if ym - yb != 0:
+                dx1 = (xm - xb) / (ym - yb)
+                dz1 = (zm - zb) / (ym - yb)
         while y <= yt:
             draw_scanline(int(x0), int(x1), int(y), z0, z1, screen, zbuffer, color)
             x0 += dx0
@@ -50,12 +103,15 @@ def scanline_convert(polygons, i, screen, zbuffer ):
             z1 += dz1
             y += 1
     else:
-        dx0 = (xt - xb) / (yt - yb)
-        dx1 = (xm - xb) / (ym - yb)
-        dx1_1 = (xt - xm) / (yt - ym)
-        dz0 = (zt - zb) / (yt - yb)
-        dz1 = (zm - zb) / (ym - yb)
-        dz1_1 = (zt - zm) / (yt - ym)
+        if yt - yb != 0:
+            dx0 = (xt - xb) / (yt - yb)
+            dz0 = (zt - zb) / (yt - yb)
+        if ym - yb != 0:
+            dx1 = (xm - xb) / (ym - yb)
+            dz1 = (zm - zb) / (ym - yb)
+        if yt - ym !=0:
+            dx1_1 = (xt - xm) / (yt - ym)
+            dz1_1 = (zt - zm) / (yt - ym)
         x0 = xb
         x1 = xb
         z0 = zb
@@ -89,7 +145,7 @@ def draw_scanline(x0, x1, y, z0, z1, screen, zbuffer, color):
     if x1-x0 != 0:
         dz = (z1-z0) / (x1-x0)
     while x <= x1:
-        if zbuffer[y][x] < z:
+        if y<500 and x<500 and y>=0 and x >=0 and zbuffer[y][x] < z:
             plot(screen, zbuffer, color, x, y, z)
         x+=1
         z+=dz
