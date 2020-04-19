@@ -4,6 +4,14 @@ from gmath import *
 import random
 def scanline_convert(polygons, i, screen, zbuffer ):
     color = [random.randrange(255), random.randrange(255), random.randrange(255)]
+    '''if len(polygons)>36:
+        color[0] = 170+(i*10%50)
+        color[1] = 170+(i*10%50)
+        color[2]= 170+(i*10%50)
+    else:
+        color[0] = (180+i*5)% 255;
+        color[1] = (180+i*5) % 255;
+        color[2]= (177+i*5) % 255;'''
     triX=[int(polygons[i][0]), int(polygons[i+1][0]), int(polygons[i+2][0])]
     triY=[int(polygons[i][1]), int(polygons[i+1][1]), int(polygons[i+2][1])]
     triZ=[polygons[i][2], polygons[i+1][2], polygons[i+2][2]]
